@@ -53,6 +53,7 @@ const ProductDialog = ({
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [formData, setFormData] = useState<ProductFormData>({
     nm_catalogo: "",
     descricao: "",
@@ -66,6 +67,7 @@ const ProductDialog = ({
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      setPreviewUrl(""); // Reset preview when initialData changes
     } else {
       setFormData({
         nm_catalogo: "",
@@ -76,6 +78,7 @@ const ProductDialog = ({
         categoria: "",
         estoque: 0,
       });
+      setPreviewUrl("");
     }
   }, [initialData, open]);
 
@@ -101,7 +104,7 @@ const ProductDialog = ({
       const fileExt = file.name.split(".").pop();
       const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2)}`;
       const fileName = `${uniqueId}.${fileExt}`;
-      const filePath = `img_catalogos/${fileName}`;
+      const filePath = `${fileName}`;
 
       // Delete old image if exists and is in our storage
       if (
@@ -110,9 +113,7 @@ const ProductDialog = ({
       ) {
         const oldPath = formData.img_catalogo.split("/").pop();
         if (oldPath) {
-          await supabase.storage
-            .from("product-images")
-            .remove([`img_catalogos/${oldPath}`]);
+          await supabase.storage.from("product-images").remove([oldPath]);
         }
       }
 
@@ -121,10 +122,7 @@ const ProductDialog = ({
         .from("product-images")
         .upload(filePath, file, {
           cacheControl: "3600",
-          upsert: false,
-          onUploadProgress: (progress) => {
-            setUploadProgress((progress.loaded / progress.total) * 100);
-          },
+          upsert: true,
         });
 
       if (uploadError) throw uploadError;
@@ -134,11 +132,20 @@ const ProductDialog = ({
         data: { publicUrl },
       } = supabase.storage.from("product-images").getPublicUrl(filePath);
 
-      setFormData({ ...formData, img_catalogo: publicUrl });
-      setUploadProgress(0);
+      setFormData((prev) => ({ ...prev, img_catalogo: publicUrl }));
+      setUploadProgress(100);
+
+      // Reset progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 500);
+
+      return publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
       setUploadProgress(0);
+      alert("Erro ao fazer upload da imagem. Por favor, tente novamente.");
+      throw error;
     }
   };
 
@@ -163,7 +170,22 @@ const ProductDialog = ({
       return;
     }
 
-    await handleImageUpload(file);
+    try {
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload the image and wait for the URL
+      const imageUrl = await handleImageUpload(file);
+      if (imageUrl) {
+        setFormData((prev) => ({ ...prev, img_catalogo: imageUrl }));
+      }
+    } catch (error) {
+      console.error("Error handling file:", error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +201,7 @@ const ProductDialog = ({
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting form:", error);
+      alert("Erro ao salvar o produto. Por favor, tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -289,10 +312,10 @@ const ProductDialog = ({
           <div className="space-y-2">
             <Label>Imagem do Produto</Label>
             <div className="flex flex-col gap-4">
-              {formData.img_catalogo && (
+              {(previewUrl || formData.img_catalogo) && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
                   <img
-                    src={formData.img_catalogo}
+                    src={previewUrl || formData.img_catalogo}
                     alt="Preview"
                     className="object-cover w-full h-full"
                   />
@@ -320,12 +343,12 @@ const ProductDialog = ({
                   </div>
                 ) : (
                   <>
-                    {formData.img_catalogo ? (
+                    {previewUrl || formData.img_catalogo ? (
                       <ImageIcon className="mr-2 h-4 w-4" />
                     ) : (
                       <Upload className="mr-2 h-4 w-4" />
                     )}
-                    {formData.img_catalogo
+                    {previewUrl || formData.img_catalogo
                       ? "Trocar imagem"
                       : "Carregar imagem"}
                   </>
