@@ -102,9 +102,11 @@ const ProductDialog = ({
     try {
       setUploadProgress(0);
       const fileExt = file.name.split(".").pop();
-      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2)}`;
+      const uniqueId = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}`;
       const fileName = `${uniqueId}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = `images/${fileName}`;
 
       // Delete old image if exists and is in our storage
       if (
@@ -156,7 +158,7 @@ const ProductDialog = ({
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       alert(
-        "Por favor, selecione apenas arquivos de imagem (JPG, PNG, GIF, WEBP)",
+        "Por favor, selecione apenas arquivos de imagem (JPG, PNG, GIF, WEBP)"
       );
       return;
     }
@@ -165,7 +167,7 @@ const ProductDialog = ({
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
       alert(
-        "O arquivo é muito grande. Por favor, selecione uma imagem com menos de 5MB.",
+        "O arquivo é muito grande. Por favor, selecione uma imagem com menos de 5MB."
       );
       return;
     }
@@ -209,7 +211,7 @@ const ProductDialog = ({
 
   const handleCategoryChange = (categoryId: string) => {
     const category = categories.find(
-      (c) => c.id_categoria.toString() === categoryId,
+      (c) => c.id_categoria.toString() === categoryId
     );
     if (category) {
       setFormData({
