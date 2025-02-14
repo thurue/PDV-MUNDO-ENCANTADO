@@ -97,11 +97,27 @@ const ProductDialog = ({
 
   const handleImageUpload = async (file: File) => {
     try {
+      setUploadProgress(0);
       const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2)}`;
+      const fileName = `${uniqueId}.${fileExt}`;
+      const filePath = `img_catalogos/${fileName}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      // Delete old image if exists and is in our storage
+      if (
+        formData.img_catalogo &&
+        formData.img_catalogo.includes("product-images")
+      ) {
+        const oldPath = formData.img_catalogo.split("/").pop();
+        if (oldPath) {
+          await supabase.storage
+            .from("product-images")
+            .remove([`img_catalogos/${oldPath}`]);
+        }
+      }
+
+      // Upload new image
+      const { error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -113,6 +129,7 @@ const ProductDialog = ({
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("product-images").getPublicUrl(filePath);
@@ -137,11 +154,25 @@ const ProductDialog = ({
       return;
     }
 
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      alert(
+        "O arquivo é muito grande. Por favor, selecione uma imagem com menos de 5MB.",
+      );
+      return;
+    }
+
     await handleImageUpload(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.img_catalogo) {
+      alert("Por favor, adicione uma imagem para o produto.");
+      return;
+    }
+
     setLoading(true);
     try {
       await onSubmit(formData);
