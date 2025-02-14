@@ -106,7 +106,7 @@ const ProductDialog = ({
         .toString(36)
         .substring(2)}`;
       const fileName = `${uniqueId}.${fileExt}`;
-      const filePath = `images/${fileName}`;
+      const filePath = `${fileName}`;
 
       // Delete old image if exists and is in our storage
       if (
