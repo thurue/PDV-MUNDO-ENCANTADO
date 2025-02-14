@@ -47,16 +47,29 @@ const ProductDialog = ({
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<string[]>([]);
-  const [formData, setFormData] = useState<ProductFormData>(
-    initialData || {
-      nm_catalogo: "",
-      descricao: "",
-      vlr_item: 0,
-      img_catalogo: "",
-      categoria: "",
-      estoque: 0,
-    },
-  );
+  const [formData, setFormData] = useState<ProductFormData>({
+    nm_catalogo: "",
+    descricao: "",
+    vlr_item: 0,
+    img_catalogo: "",
+    categoria: "",
+    estoque: 0,
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else {
+      setFormData({
+        nm_catalogo: "",
+        descricao: "",
+        vlr_item: 0,
+        img_catalogo: "",
+        categoria: "",
+        estoque: 0,
+      });
+    }
+  }, [initialData, open]);
 
   useEffect(() => {
     fetchCategories();

@@ -53,30 +53,49 @@ const Catalog = () => {
   };
 
   const handleCreate = async (data: ProductFormData) => {
-    const { error } = await supabase.from("catalogo").insert([data]);
-    if (error) throw error;
-    fetchProducts();
+    try {
+      const { error } = await supabase.from("catalogo").insert([
+        {
+          ...data,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+      if (error) throw error;
+      fetchProducts();
+    } catch (error) {
+      console.error("Error creating product:", error);
+      throw error;
+    }
   };
 
   const handleUpdate = async (data: ProductFormData) => {
     if (!selectedProduct) return;
-    const { error } = await supabase
-      .from("catalogo")
-      .update(data)
-      .eq("id_catalogo", selectedProduct.id_catalogo);
-    if (error) throw error;
-    fetchProducts();
+    try {
+      const { error } = await supabase
+        .from("catalogo")
+        .update(data)
+        .eq("id_catalogo", selectedProduct.id_catalogo);
+      if (error) throw error;
+      fetchProducts();
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
   };
 
   const handleDelete = async () => {
     if (!selectedProduct) return;
-    const { error } = await supabase
-      .from("catalogo")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id_catalogo", selectedProduct.id_catalogo);
-    if (error) throw error;
-    setDeleteDialogOpen(false);
-    fetchProducts();
+    try {
+      const { error } = await supabase
+        .from("catalogo")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id_catalogo", selectedProduct.id_catalogo);
+      if (error) throw error;
+      setDeleteDialogOpen(false);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
   };
 
   const openCreateDialog = () => {
@@ -174,7 +193,7 @@ const Catalog = () => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={mode === "create" ? handleCreate : handleUpdate}
-        initialData={selectedProduct || undefined}
+        initialData={selectedProduct}
         mode={mode}
       />
 
