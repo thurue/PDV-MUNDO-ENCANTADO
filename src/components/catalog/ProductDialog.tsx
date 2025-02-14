@@ -27,11 +27,17 @@ interface ProductDialogProps {
   mode: "create" | "edit";
 }
 
+interface Category {
+  id_categoria: number;
+  nm_categoria: string;
+}
+
 export interface ProductFormData {
   nm_catalogo: string;
   descricao: string;
   vlr_item: number;
   img_catalogo: string;
+  id_categoria: number | null;
   categoria: string;
   estoque: number;
 }
@@ -46,12 +52,13 @@ const ProductDialog = ({
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     nm_catalogo: "",
     descricao: "",
     vlr_item: 0,
     img_catalogo: "",
+    id_categoria: null,
     categoria: "",
     estoque: 0,
   });
@@ -65,6 +72,7 @@ const ProductDialog = ({
         descricao: "",
         vlr_item: 0,
         img_catalogo: "",
+        id_categoria: null,
         categoria: "",
         estoque: 0,
       });
@@ -77,15 +85,13 @@ const ProductDialog = ({
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
-      .from("catalogo")
-      .select("categoria")
-      .not("categoria", "is", null);
+      .from("categorias")
+      .select("*")
+      .is("deleted_at", null)
+      .order("nm_categoria");
 
     if (!error && data) {
-      const uniqueCategories = Array.from(
-        new Set(data.map((item) => item.categoria).filter(Boolean)),
-      );
-      setCategories(uniqueCategories);
+      setCategories(data);
     }
   };
 
@@ -144,6 +150,19 @@ const ProductDialog = ({
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    const category = categories.find(
+      (c) => c.id_categoria.toString() === categoryId,
+    );
+    if (category) {
+      setFormData({
+        ...formData,
+        id_categoria: category.id_categoria,
+        categoria: category.nm_categoria,
+      });
     }
   };
 
@@ -217,33 +236,23 @@ const ProductDialog = ({
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
             <Select
-              value={formData.categoria}
-              onValueChange={(value) =>
-                setFormData({ ...formData, categoria: value })
-              }
+              value={formData.id_categoria?.toString()}
+              onValueChange={handleCategoryChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem
+                    key={category.id_categoria}
+                    value={category.id_categoria.toString()}
+                  >
+                    {category.nm_categoria}
                   </SelectItem>
                 ))}
-                <SelectItem value="new">+ Nova Categoria</SelectItem>
               </SelectContent>
             </Select>
-            {formData.categoria === "new" && (
-              <Input
-                placeholder="Digite a nova categoria"
-                value={formData.categoria === "new" ? "" : formData.categoria}
-                onChange={(e) =>
-                  setFormData({ ...formData, categoria: e.target.value })
-                }
-                className="mt-2"
-              />
-            )}
           </div>
 
           <div className="space-y-2">
