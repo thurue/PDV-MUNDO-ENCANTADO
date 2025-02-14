@@ -34,7 +34,7 @@ const LoginScreen = ({
         <Card className="bg-white shadow-xl border-orange-200">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl font-bold text-orange-600">
-              Festa Junina POS
+              Festa Junina pdv
             </CardTitle>
             <p className="text-gray-600 mt-2">
               Welcome! Please enter the system password to continue.

@@ -24,47 +24,55 @@ const ProductGrid = ({
 }: ProductGridProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
-
   useEffect(() => {
-    // Get unique categories from products
-    const uniqueCategories = Array.from(
-      new Set(products.map((p) => p.category).filter(Boolean)),
-    );
-    setCategories(uniqueCategories);
-  }, [products]);
+    const fetchCategories = async () => {
+      const { data, error } = await supabase.from("categorias").select("*");
+      if (error) {
+        console.error("Error fetching categories:", error);
+      } else {
+        setCategories(data);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const filteredProducts =
-    selectedCategory === "all"
+    selectedCategory === ""
       ? products
-      : products.filter((p) => p.category === selectedCategory);
+      : products.filter((p) => p.id_categoria === selectedCategory);
+
+  console.log(products);
 
   return (
     <div className="bg-orange-50 min-h-screen p-2 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-wrap gap-2">
           <Button
-            variant={selectedCategory === "all" ? "default" : "outline"}
-            onClick={() => setSelectedCategory("all")}
+            variant={selectedCategory === "" ? "default" : "outline"}
+            onClick={() => setSelectedCategory("")}
             className={
-              selectedCategory === "all"
-                ? "bg-orange-600 hover:bg-orange-700"
-                : ""
+              selectedCategory === "" ? "bg-orange-600 hover:bg-orange-700" : ""
             }
           >
             Todos
           </Button>
           {categories.map((category) => (
             <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => setSelectedCategory(category)}
+              key={category.id_categoria}
+              variant={
+                selectedCategory === category.id_categoria
+                  ? "default"
+                  : "outline"
+              }
+              onClick={() => setSelectedCategory(category.id_categoria)}
               className={
-                selectedCategory === category
+                selectedCategory === category.id_categoria
                   ? "bg-orange-600 hover:bg-orange-700"
                   : ""
               }
             >
-              {category}
+              {category.nm_categoria}
             </Button>
           ))}
         </div>
