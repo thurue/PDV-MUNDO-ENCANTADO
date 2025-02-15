@@ -6,8 +6,20 @@ import {
   Package,
   DollarSign,
   ShoppingCart,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SalesMetrics {
   totalSales: number;
@@ -20,6 +32,16 @@ interface SalesMetrics {
   }>;
 }
 
+interface Sale {
+  id_venda: number;
+  created_at: string;
+  vlr_transaction: number;
+  quantidade: number;
+  catalogo: {
+    nm_catalogo: string;
+  };
+}
+
 const Dashboard = () => {
   const [metrics, setMetrics] = useState<SalesMetrics>({
     totalSales: 0,
@@ -28,6 +50,9 @@ const Dashboard = () => {
     topProducts: [],
   });
   const [loading, setLoading] = useState(true);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   useEffect(() => {
     fetchMetrics();
@@ -43,12 +68,16 @@ const Dashboard = () => {
           id_venda,
           vlr_transaction,
           quantidade,
+          created_at,
           catalogo:id_catalogo(nm_catalogo)
         `,
         )
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
 
       if (salesError) throw salesError;
+
+      setSales(salesData);
 
       const totalSales = salesData.reduce(
         (sum, sale) => sum + (sale.vlr_transaction || 0),
@@ -93,6 +122,30 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedSale) return;
+
+    try {
+      const { error } = await supabase
+        .from("vendas")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id_venda", selectedSale.id_venda);
+
+      if (error) throw error;
+
+      setDeleteDialogOpen(false);
+      fetchMetrics(); // Refresh data
+    } catch (error) {
+      console.error("Error deleting sale:", error);
+      alert("Erro ao deletar venda. Por favor, tente novamente.");
+    }
+  };
+
+  const openDeleteDialog = (sale: Sale) => {
+    setSelectedSale(sale);
+    setDeleteDialogOpen(true);
   };
 
   if (loading) {
@@ -176,6 +229,66 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Histórico de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sales.map((sale) => (
+              <div
+                key={sale.id_venda}
+                className="flex items-center justify-between py-2 border-b last:border-b-0"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {sale.catalogo?.nm_catalogo}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(sale.created_at).toLocaleString("pt-BR")}
+                  </p>
+                  <p className="text-sm">{sale.quantidade} unidades</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <p className="text-sm font-medium text-orange-600">
+                    R${sale.vlr_transaction.toFixed(2)}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500 hover:text-red-600"
+                    onClick={() => openDeleteDialog(sale)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta venda? Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
