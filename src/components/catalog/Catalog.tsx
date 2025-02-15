@@ -56,8 +56,14 @@ const Catalog = () => {
     try {
       const { error } = await supabase.from("catalogo").insert([
         {
-          ...data,
+          nm_catalogo: data.nm_catalogo,
+          descricao: data.descricao,
+          vlr_item: data.vlr_item,
+          img_catalogo: data.img_catalogo,
+          estoque: data.estoque,
           created_at: new Date().toISOString(),
+          deleted_at: null,
+          id_categoria: data.id_categoria,
         },
       ]);
       if (error) throw error;
