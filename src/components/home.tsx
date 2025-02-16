@@ -57,7 +57,7 @@ function Home() {
       const existingItem = prev.find((item) => item.id === id);
       if (existingItem) {
         return prev.map((item) =>
-          item.id === id ? { ...item, quantity } : item
+          item.id === id ? { ...item, quantity } : item,
         );
       }
       return [
@@ -80,7 +80,7 @@ function Home() {
       return;
     }
     setCartItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) => (item.id === id ? { ...item, quantity } : item)),
     );
   };
 
@@ -117,12 +117,12 @@ function Home() {
   };
 
   const quantities = Object.fromEntries(
-    cartItems.map((item) => [item.id, item.quantity])
+    cartItems.map((item) => [item.id, item.quantity]),
   );
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
 
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -133,7 +133,7 @@ function Home() {
     price: p.vlr_item,
     image: p.img_catalogo || "",
     category: p.categoria || "",
-    id_categoria: p.id_categoria || "",
+    id_categoria: p.id_categoria,
   }));
 
   return (
