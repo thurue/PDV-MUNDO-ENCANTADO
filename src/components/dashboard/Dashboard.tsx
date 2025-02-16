@@ -26,7 +26,7 @@ interface SalesMetrics {
   totalOrders: number;
   averageOrderValue: number;
   topProducts: Array<{
-    nm_catalogo: string;
+    nm_catalogo: string[];
     total_quantity: number;
     total_value: number;
   }>;
@@ -70,7 +70,7 @@ const Dashboard = () => {
           quantidade,
           created_at,
           catalogo:id_catalogo(nm_catalogo)
-        `,
+        `
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -81,27 +81,24 @@ const Dashboard = () => {
 
       const totalSales = salesData.reduce(
         (sum, sale) => sum + (sale.vlr_transaction || 0),
-        0,
+        0
       );
       const totalOrders = salesData.length;
 
       // Calculate top products
-      const productStats = salesData.reduce(
-        (acc, sale) => {
-          const productName = sale.catalogo?.nm_catalogo;
-          if (!productName) return acc;
+      const productStats = salesData.reduce((acc, sale) => {
+        const productName = sale.catalogo?.nm_catalogo;
+        if (!productName) return acc;
 
-          if (!acc[productName]) {
-            acc[productName] = { total_quantity: 0, total_value: 0 };
-          }
+        if (!acc[productName]) {
+          acc[productName] = { total_quantity: 0, total_value: 0 };
+        }
 
-          acc[productName].total_quantity += sale.quantidade || 0;
-          acc[productName].total_value += sale.vlr_transaction || 0;
+        acc[productName].total_quantity += sale.quantidade || 0;
+        acc[productName].total_value += sale.vlr_transaction || 0;
 
-          return acc;
-        },
-        {} as Record<string, { total_quantity: number; total_value: number }>,
-      );
+        return acc;
+      }, {} as Record<string, { total_quantity: number; total_value: number }>);
 
       const topProductsList = Object.entries(productStats)
         .map(([nm_catalogo, stats]) => ({
