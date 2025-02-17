@@ -123,9 +123,7 @@ const Catalog = () => {
   return (
     <div className="p-4 md:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Catálogo de Produtos
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Catálogo</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center border rounded-lg p-1 bg-muted">
             <Toggle
@@ -183,9 +181,12 @@ const Catalog = () => {
                 />
               </div>
             </div>
-            <div className="p-4 flex-1">
+            <div className="p-4 flex-1 space-y-2">
+              {/*  */}
               <div
-                className={`${viewMode === "list" ? "flex justify-between items-start" : ""}`}
+                className={`${
+                  viewMode === "list" ? "flex justify-between items-start" : ""
+                }`}
               >
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
@@ -200,7 +201,13 @@ const Catalog = () => {
                     </p>
                   )}
                 </div>
-                {viewMode === "list" && (
+              </div>
+              {/*  */}
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                  Estoque: {product.estoque || 0}
+                </div>
+                {viewMode === "grid" && (
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
@@ -220,11 +227,9 @@ const Catalog = () => {
                   </div>
                 )}
               </div>
+              {/*  */}
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Estoque: {product.estoque || 0}
-                </div>
-                {viewMode === "grid" && (
+                {viewMode === "list" && (
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
