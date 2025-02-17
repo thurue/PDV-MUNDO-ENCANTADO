@@ -13,7 +13,7 @@ interface Product {
   name: string;
   price: number;
   image: string;
-  id_categoria: string; // Adicionado para corresponder ao filtro usado
+  id_categoria: string;
 }
 
 interface ProductGridProps {
@@ -52,34 +52,37 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   return (
     <div className="bg-orange-50 min-h-screen p-2 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedCategory === "" ? "default" : "outline"}
-            onClick={() => setSelectedCategory("")}
-            className={
-              selectedCategory === "" ? "bg-orange-600 hover:bg-orange-700" : ""
-            }
-          >
-            Todos
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category.id_categoria}
-              variant={
-                selectedCategory === category.id_categoria
-                  ? "default"
-                  : "outline"
-              }
-              onClick={() => setSelectedCategory(category.id_categoria)}
-              className={
-                selectedCategory === category.id_categoria
-                  ? "bg-orange-600 hover:bg-orange-700"
-                  : ""
-              }
-            >
-              {category.nm_categoria}
-            </Button>
-          ))}
+        <div className="relative w-full overflow-x-auto pb-4">
+          <div className="flex gap-2 snap-x snap-mandatory overflow-x-auto scrollbar-none">
+            <div className="snap-start scroll-ml-2 shrink-0">
+              <Button
+                variant={selectedCategory === "" ? "default" : "outline"}
+                onClick={() => setSelectedCategory("")}
+                className={`min-w-[100px] ${selectedCategory === "" ? "bg-orange-600 hover:bg-orange-700" : ""}`}
+              >
+                Todos
+              </Button>
+            </div>
+            {categories.map((category) => (
+              <div key={category.id_categoria} className="snap-start shrink-0">
+                <Button
+                  variant={
+                    selectedCategory === category.id_categoria
+                      ? "default"
+                      : "outline"
+                  }
+                  onClick={() => setSelectedCategory(category.id_categoria)}
+                  className={`min-w-[100px] ${
+                    selectedCategory === category.id_categoria
+                      ? "bg-orange-600 hover:bg-orange-700"
+                      : ""
+                  }`}
+                >
+                  {category.nm_categoria}
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">

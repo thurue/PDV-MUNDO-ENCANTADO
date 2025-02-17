@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, LayoutGrid, List } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
+import ProductDialog from "./ProductDialog";
 import { supabase } from "@/lib/supabase";
-import ProductDialog, { ProductFormData } from "./ProductDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,17 +15,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tables } from "@/types/supabase";
 
-interface Product {
-  id_categoria: number;
-  id_catalogo: number;
-  nm_catalogo: string;
-  descricao: string;
-  vlr_item: number;
-  img_catalogo: string;
-  categoria: string;
-  estoque: number;
-}
+type Product = Tables<"catalogo">;
 
 const Catalog = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,6 +26,7 @@ const Catalog = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [mode, setMode] = useState<"create" | "edit">("create");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     fetchProducts();
@@ -53,18 +48,13 @@ const Catalog = () => {
     }
   };
 
-  const handleCreate = async (data: ProductFormData) => {
+  const handleCreate = async (data: Product) => {
     try {
       const { error } = await supabase.from("catalogo").insert([
         {
-          nm_catalogo: data.nm_catalogo,
-          descricao: data.descricao,
-          vlr_item: data.vlr_item,
-          img_catalogo: data.img_catalogo,
-          estoque: data.estoque,
+          ...data,
           created_at: new Date().toISOString(),
           deleted_at: null,
-          id_categoria: data.id_categoria,
         },
       ]);
       if (error) throw error;
@@ -75,7 +65,7 @@ const Catalog = () => {
     }
   };
 
-  const handleUpdate = async (data: ProductFormData) => {
+  const handleUpdate = async (data: Product) => {
     if (!selectedProduct) return;
     try {
       const { error } = await supabase
@@ -136,60 +126,123 @@ const Catalog = () => {
         <h1 className="text-2xl font-bold text-gray-900">
           Catálogo de Produtos
         </h1>
-        <Button
-          onClick={openCreateDialog}
-          className="bg-orange-600 hover:bg-orange-700"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Adicionar Produto
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center border rounded-lg p-1 bg-muted">
+            <Toggle
+              pressed={viewMode === "grid"}
+              onPressedChange={() => setViewMode("grid")}
+              size="sm"
+              className="data-[state=on]:bg-white"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Toggle>
+            <Toggle
+              pressed={viewMode === "list"}
+              onPressedChange={() => setViewMode("list")}
+              size="sm"
+              className="data-[state=on]:bg-white"
+            >
+              <List className="h-4 w-4" />
+            </Toggle>
+          </div>
+          <Button
+            onClick={openCreateDialog}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Adicionar Produto
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        className={
+          viewMode === "grid"
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            : "space-y-4"
+        }
+      >
         {products.map((product) => (
           <div
             key={product.id_catalogo}
-            className="bg-white rounded-lg shadow-md overflow-hidden"
+            className={`bg-white rounded-lg shadow-md overflow-hidden ${
+              viewMode === "list" ? "flex" : ""
+            }`}
           >
-            <div className="aspect-[4/3] relative">
-              <img
-                src={product.img_catalogo || "https://via.placeholder.com/400"}
-                alt={product.nm_catalogo}
-                className="w-full h-full object-cover"
-              />
+            <div className={`${viewMode === "list" ? "w-48" : ""} relative`}>
+              <div
+                className={
+                  viewMode === "grid" ? "aspect-[4/3]" : "aspect-square"
+                }
+              >
+                <img
+                  src={
+                    product.img_catalogo || "https://via.placeholder.com/400"
+                  }
+                  alt={product.nm_catalogo}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-            <div className="p-4">
-              <h3 className="font-semibold text-lg mb-1">
-                {product.nm_catalogo}
-              </h3>
-              <p className="text-orange-600 font-bold mb-2">
-                R${product.vlr_item.toFixed(2)}
-              </p>
-              {product.descricao && (
-                <p className="text-gray-600 text-sm mb-2">
-                  {product.descricao}
-                </p>
-              )}
+            <div className="p-4 flex-1">
+              <div
+                className={`${viewMode === "list" ? "flex justify-between items-start" : ""}`}
+              >
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">
+                    {product.nm_catalogo}
+                  </h3>
+                  <p className="text-orange-600 font-bold mb-2">
+                    R${product.vlr_item.toFixed(2)}
+                  </p>
+                  {product.descricao && (
+                    <p className="text-gray-600 text-sm mb-2">
+                      {product.descricao}
+                    </p>
+                  )}
+                </div>
+                {viewMode === "list" && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(product)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => openDeleteDialog(product)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500">
                   Estoque: {product.estoque || 0}
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(product)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:text-red-600"
-                    onClick={() => openDeleteDialog(product)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                {viewMode === "grid" && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(product)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => openDeleteDialog(product)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
