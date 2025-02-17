@@ -3,34 +3,41 @@ import ProductCard from "./ProductCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
+interface Category {
+  id_categoria: string;
+  nm_categoria: string;
+}
+
 interface Product {
   id: string;
   name: string;
   price: number;
   image: string;
-  category?: string;
+  id_categoria: string; // Adicionado para corresponder ao filtro usado
 }
 
 interface ProductGridProps {
-  products?: Product[];
+  products?: any[];
   onQuantityChange?: (id: string, quantity: number) => void;
   quantities?: Record<string, number>;
 }
 
-const ProductGrid = ({
+const ProductGrid: React.FC<ProductGridProps> = ({
   products = [],
   onQuantityChange = () => {},
   quantities = {},
 }: ProductGridProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [categories, setCategories] = useState<Category[]>([]);
+
   useEffect(() => {
     const fetchCategories = async () => {
       const { data, error } = await supabase.from("categorias").select("*");
+
       if (error) {
         console.error("Error fetching categories:", error);
       } else {
-        setCategories(data);
+        setCategories(data || []);
       }
     };
 
@@ -41,8 +48,6 @@ const ProductGrid = ({
     selectedCategory === ""
       ? products
       : products.filter((p) => p.id_categoria === selectedCategory);
-
-  console.log(products);
 
   return (
     <div className="bg-orange-50 min-h-screen p-2 md:p-6">

@@ -42,7 +42,49 @@ export interface ProductFormData {
   estoque: number;
 }
 
-const ProductDialog = ({
+// Interface para o Product que será usada no Grid
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  id_categoria: number | null;
+  categoria?: string;
+  estoque?: number;
+  descricao?: string;
+}
+
+// Função auxiliar para converter Product em ProductFormData
+export const productToFormData = (product: Product): ProductFormData => {
+  return {
+    nm_catalogo: product.name,
+    descricao: product.descricao || "",
+    vlr_item: product.price,
+    img_catalogo: product.image,
+    id_categoria: product.id_categoria,
+    categoria: product.categoria || "",
+    estoque: product.estoque || 0,
+  };
+};
+
+// Função auxiliar para converter ProductFormData em Product
+export const formDataToProduct = (
+  formData: ProductFormData,
+  id?: string
+): Product => {
+  return {
+    id: id || "",
+    name: formData.nm_catalogo,
+    price: formData.vlr_item,
+    image: formData.img_catalogo,
+    id_categoria: formData.id_categoria,
+    categoria: formData.categoria,
+    estoque: formData.estoque,
+    descricao: formData.descricao,
+  };
+};
+
+const ProductDialog: React.FC<ProductDialogProps> = ({
   open,
   onOpenChange,
   onSubmit,

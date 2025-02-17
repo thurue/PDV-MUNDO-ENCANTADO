@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface Product {
+  id_categoria: number;
   id_catalogo: number;
   nm_catalogo: string;
   descricao: string;

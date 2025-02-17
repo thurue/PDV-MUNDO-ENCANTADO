@@ -26,10 +26,14 @@ interface SalesMetrics {
   totalOrders: number;
   averageOrderValue: number;
   topProducts: Array<{
-    nm_catalogo: string[];
+    nm_catalogo: string; // Removido o opcional
     total_quantity: number;
     total_value: number;
   }>;
+}
+
+interface Catalogo {
+  nm_catalogo: string; // Removido o opcional
 }
 
 interface Sale {
@@ -37,12 +41,10 @@ interface Sale {
   created_at: string;
   vlr_transaction: number;
   quantidade: number;
-  catalogo: {
-    nm_catalogo: string;
-  };
+  catalogo: Catalogo; // Alterado para usar a interface Catalogo
 }
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<SalesMetrics>({
     totalSales: 0,
     totalOrders: 0,
@@ -60,7 +62,6 @@ const Dashboard = () => {
 
   const fetchMetrics = async () => {
     try {
-      // Fetch total sales and orders
       const { data: salesData, error: salesError } = await supabase
         .from("vendas")
         .select(
@@ -77,28 +78,39 @@ const Dashboard = () => {
 
       if (salesError) throw salesError;
 
-      setSales(salesData);
+      // Tipagem explícita e transformação dos dados
+      const typedSalesData: Sale[] = (salesData || []).map((sale: any) => ({
+        id_venda: sale.id_venda,
+        created_at: sale.created_at,
+        vlr_transaction: sale.vlr_transaction || 0,
+        quantidade: sale.quantidade || 0,
+        catalogo: {
+          nm_catalogo: sale.catalogo?.nm_catalogo || "",
+        },
+      }));
 
-      const totalSales = salesData.reduce(
-        (sum, sale) => sum + (sale.vlr_transaction || 0),
+      setSales(typedSalesData);
+
+      const totalSales = typedSalesData.reduce(
+        (sum, sale) => sum + sale.vlr_transaction,
         0
       );
-      const totalOrders = salesData.length;
+      const totalOrders = typedSalesData.length;
 
-      // Calculate top products
-      const productStats = salesData.reduce((acc, sale) => {
-        const productName = sale.catalogo?.nm_catalogo;
-        if (!productName) return acc;
+      // Calculate top products com tipagem correta
+      const productStats: Record<
+        string,
+        { total_quantity: number; total_value: number }
+      > = {};
 
-        if (!acc[productName]) {
-          acc[productName] = { total_quantity: 0, total_value: 0 };
+      typedSalesData.forEach((sale) => {
+        const productName = sale.catalogo.nm_catalogo;
+        if (!productStats[productName]) {
+          productStats[productName] = { total_quantity: 0, total_value: 0 };
         }
-
-        acc[productName].total_quantity += sale.quantidade || 0;
-        acc[productName].total_value += sale.vlr_transaction || 0;
-
-        return acc;
-      }, {} as Record<string, { total_quantity: number; total_value: number }>);
+        productStats[productName].total_quantity += sale.quantidade;
+        productStats[productName].total_value += sale.vlr_transaction;
+      });
 
       const topProductsList = Object.entries(productStats)
         .map(([nm_catalogo, stats]) => ({
@@ -133,7 +145,7 @@ const Dashboard = () => {
       if (error) throw error;
 
       setDeleteDialogOpen(false);
-      fetchMetrics(); // Refresh data
+      fetchMetrics();
     } catch (error) {
       console.error("Error deleting sale:", error);
       alert("Erro ao deletar venda. Por favor, tente novamente.");
